@@ -19,11 +19,7 @@ public class XPKeeper extends JavaPlugin implements Listener {
 
     XPKdatabase service = XPKdatabase.getInstance();
     private XPKexecutor xpkExecutor;
-    XPKsign signListener = new XPKsign(this);
-    XPKplayer playerListener = new XPKplayer(this);
-    XPKbreak breakListener = new XPKbreak(this);
-    XPKarrgghh explodeListener = new XPKarrgghh(this);
-    XPKPistonListener pistonListener = new XPKPistonListener(this);
+    XpkInteractionListener interactionListener = new XpkInteractionListener(this);
     PluginManager pm = Bukkit.getServer().getPluginManager();
     public HashMap<String, Boolean> trackPlayers = new HashMap<String, Boolean>();
 
@@ -47,11 +43,7 @@ public class XPKeeper extends JavaPlugin implements Listener {
         getCommand("xpkwithdraw").setExecutor(xpkExecutor);
         getCommand("xpklimit").setExecutor(xpkExecutor);
         getCommand("xpkreload").setExecutor(xpkExecutor);
-        pm.registerEvents(signListener, this);
-        pm.registerEvents(playerListener, this);
-        pm.registerEvents(breakListener, this);
-        pm.registerEvents(explodeListener, this);
-        pm.registerEvents(pistonListener, this);
+        pm.registerEvents(interactionListener, this);
         try {
             String path = getDataFolder() + File.separator + "XPKeeper.db";
             service.setConnection(path);
