@@ -118,7 +118,7 @@ public class XPKplayer implements Listener {
                                         player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.withdraw_all"));
                                     } else {
                                         int levelXP = xpkc.getXpForLevel(xpkc.getLevelForExp(xp) + withdrawAmount) - xp;
-                                        if (keptXP >= levelXP) {
+                                        if (keptXP > levelXP) {
                                             // calculate remaining XP amount
                                             int remainingXP = keptXP - levelXP;
                                             plugin.setKeptXP(remainingXP, playerNameStr, world);
