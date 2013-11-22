@@ -53,7 +53,7 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
             } catch (NumberFormatException nfe) {
                 System.err.println("[XPKeeper] could not convert to number!");
             }
-            xpkc.changeExp(i);
+            xpkc.addXp(i);
             return true;
         }
         if (cmd.getName().equalsIgnoreCase("xpkset")) {
@@ -77,7 +77,7 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
             } catch (NumberFormatException nfe) {
                 System.err.println("[XPKeeper] could not convert to number!");
             }
-            xpkc.setExp(i);
+            xpkc.setXp(i);
             return true;
         }
         if (cmd.getName().equalsIgnoreCase("xpkremove")) {
@@ -239,13 +239,13 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
                 return false;
             }
             // check whether the giver has enough to give
-            int checkEnough = xpkc_g.getCurrentExp();
+            int checkEnough = xpkc_g.getXp();
             if (i > checkEnough) {
                 sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.not_enough"));
                 return true;
             }
-            xpkc_r.changeExp(i);
-            xpkc_g.changeExp(-i);
+            xpkc_r.addXp(i);
+            xpkc_g.addXp(-i);
             giver.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + String.format(plugin.getConfig().getString("messages.giver"), args[0], i));
             receiver.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + String.format(plugin.getConfig().getString("messages.reciever"), giver.getName(), i));
             return true;
