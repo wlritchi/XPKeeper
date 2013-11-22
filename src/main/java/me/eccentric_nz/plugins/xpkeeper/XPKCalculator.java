@@ -77,7 +77,7 @@ public class XPKCalculator {
      * @param xp
      * @return
      */
-    private static int calculateLevelForExp(int xp) {
+    private static int calculateLevelForXp(int xp) {
         if (xp <= 288) {
             return xp / 17;
         }
@@ -108,7 +108,7 @@ public class XPKCalculator {
             }
         }
         if (xp > xpTotal[xpTotal.length - 1]) {
-            int newMax = calculateLevelForExp(xp) * 2;
+            int newMax = calculateLevelForXp(xp) * 2;
             if (newMax > MAX_LEVEL) {
                 throw new IllegalArgumentException("Level for " + xp + " xp > hard max level " + MAX_LEVEL);
             }
