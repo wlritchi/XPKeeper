@@ -164,6 +164,10 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
                     return true;
                 }
             }
+            if (args.length < 1) {
+                sendMessage(sender, "messages.arguments");
+                return false;
+            }
             int amount;
             try {
                 amount = Integer.parseInt(args[0]);
