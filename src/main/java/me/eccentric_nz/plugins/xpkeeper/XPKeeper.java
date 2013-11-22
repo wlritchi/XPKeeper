@@ -6,7 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -21,7 +22,6 @@ public class XPKeeper extends JavaPlugin implements Listener {
     private XPKexecutor xpkExecutor;
     XpkInteractionListener interactionListener = new XpkInteractionListener(this);
     PluginManager pm = Bukkit.getServer().getPluginManager();
-    public HashMap<String, Boolean> trackPlayers = new HashMap<String, Boolean>();
 
     @Override
     public void onDisable() {
@@ -59,6 +59,17 @@ public class XPKeeper extends JavaPlugin implements Listener {
         } catch (IOException e) {
             // Failed to submit the stats :-(
         }
+    }
+
+    private Set<String> playersRemoving = new HashSet<String>();
+    public void setRemoving(String p) {
+        playersRemoving.add(p);
+    }
+    public boolean isRemoving(String p) {
+        return playersRemoving.contains(p);
+    }
+    public void clearRemoving(String p) {
+        playersRemoving.remove(p);
     }
 
     public int getKeptXP(String p, String w) {

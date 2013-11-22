@@ -188,8 +188,8 @@ public class XpkInteractionListener implements Listener {
                 if (playerNameStr.length() > 15) {
                     sign_str = playerNameStr.substring(0, 15);
                 }
-                if (plugin.trackPlayers.containsKey(playerNameStr) && line1.equals(sign_str)) {
-                    plugin.trackPlayers.remove(playerNameStr);
+                if (plugin.isRemoving(playerNameStr) && line1.equals(sign_str)) {
+                    plugin.clearRemoving(playerNameStr);
                     // set the sign block to AIR and delete the XPKeeper data
                     block.setType(Material.AIR);
                     // drop a sign
