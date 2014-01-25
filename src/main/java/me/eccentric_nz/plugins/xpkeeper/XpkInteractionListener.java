@@ -44,7 +44,7 @@ public class XpkInteractionListener implements Listener {
         String firstLine = "[" + plugin.getConfig().getString("firstline") + "]";
         if (block.getType() == Material.SIGN_POST || block.getType() == Material.WALL_SIGN) {
             Sign sign = (Sign)block.getState();
-            if (firstLine.equalsIgnoreCase(plugin.stripColourCode(sign.getLine(0)))) {
+            if (firstLine.equalsIgnoreCase(ChatColor.stripColor(sign.getLine(0)))) {
                 return true;
             }
         }
@@ -296,7 +296,7 @@ public class XpkInteractionListener implements Listener {
             sign_str = playerNameStr.substring(0, 15);
         }
         String firstline = "[" + plugin.getConfig().getString("firstline") + "]";
-        if (firstline.equalsIgnoreCase(plugin.stripColourCode(event.getLine(0)))) {
+        if (firstline.equalsIgnoreCase(ChatColor.stripColor(event.getLine(0)))) {
             if (player.hasPermission("xpkeeper.use")) {
                 // check to see if they have a keeper already
                 int keptXP = plugin.getKeptXP(playerNameStr, world);

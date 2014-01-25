@@ -136,12 +136,4 @@ public class XPKeeper extends JavaPlugin {
         BlockFace bf = s.getAttachedFace();
         return bf;
     }
-
-    public String stripColourCode(String s) {
-        if (s.startsWith(String.valueOf(ChatColor.COLOR_CHAR))) {
-            return s.substring(2);
-        } else {
-            return s;
-        }
-    }
 }
