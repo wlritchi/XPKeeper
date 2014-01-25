@@ -31,9 +31,9 @@ import org.bukkit.World;
 
 public class XpkInteractionListener implements Listener {
 
-    private XPKeeper plugin;
+    private final XPKeeper plugin;
 
-    List<BlockFace> adjacentFaces = Arrays.asList(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
+    private final List<BlockFace> adjacentFaces = Arrays.asList(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
 
     public XpkInteractionListener(XPKeeper plugin) {
         this.plugin = plugin;
@@ -44,7 +44,7 @@ public class XpkInteractionListener implements Listener {
         String firstLine = "[" + plugin.getConfig().getString("firstline") + "]";
         if (block.getType() == Material.SIGN_POST || block.getType() == Material.WALL_SIGN) {
             Sign sign = (Sign)block.getState();
-            if (firstLine.equalsIgnoreCase(sign.getLine(0))) {
+            if (firstLine.equalsIgnoreCase(plugin.stripColourCode(sign.getLine(0)))) {
                 return true;
             }
         }
@@ -296,12 +296,16 @@ public class XpkInteractionListener implements Listener {
             sign_str = playerNameStr.substring(0, 15);
         }
         String firstline = "[" + plugin.getConfig().getString("firstline") + "]";
-        if (firstline.equalsIgnoreCase(event.getLine(0))) {
+        if (firstline.equalsIgnoreCase(plugin.stripColourCode(event.getLine(0)))) {
             if (player.hasPermission("xpkeeper.use")) {
                 // check to see if they have a keeper already
                 int keptXP = plugin.getKeptXP(playerNameStr, world);
                 if (keptXP < 0) {
                     plugin.insKeptXP(playerNameStr, world);
+                    String flc = plugin.getConfig().getString("firstline_colour");
+                    if (!flc.equals("&0")) {
+                        event.setLine(0, ChatColor.translateAlternateColorCodes('&', flc) + firstline);
+                    }
                     event.setLine(1, sign_str);
                     event.setLine(2, "Level: 0");
                     event.setLine(3, "XP: 0");

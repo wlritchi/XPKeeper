@@ -4,21 +4,39 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
-public class XPKexecutor extends JavaPlugin implements CommandExecutor {
+public class XPKexecutor implements CommandExecutor {
 
-    private XPKeeper plugin;
-    private XPKdatabase service = XPKdatabase.getInstance();
+    private final XPKeeper plugin;
+    private final XPKdatabase service = XPKdatabase.getInstance();
+    public final HashMap<String, String> colours;
 
     public XPKexecutor(XPKeeper plugin) {
         this.plugin = plugin;
+        colours = new HashMap<String, String>();
+        colours.put("&0", "Black");
+        colours.put("&1", "Dark Blue");
+        colours.put("&2", "Dark Green");
+        colours.put("&3", "Dark Aqua");
+        colours.put("&4", "Dark Red");
+        colours.put("&5", "Purple");
+        colours.put("&6", "Gold");
+        colours.put("&7", "Grey");
+        colours.put("&8", "Dark Grey");
+        colours.put("&9", "Indigo");
+        colours.put("&a", "Bright Green");
+        colours.put("&b", "Aqua");
+        colours.put("&c", "Red");
+        colours.put("&d", "Pink");
+        colours.put("&e", "Yellow");
+        colours.put("&f", "White");
     }
 
     @Override
@@ -122,7 +140,7 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
                     if (statement != null) {
                         statement.close();
                     }
-                } catch (Exception e) {
+                } catch (SQLException e) {
                 }
             }
             sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + "All database entries for " + ChatColor.RED + player + ChatColor.RESET + " were removed.");
@@ -165,7 +183,7 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
                 }
             }
             if (args.length < 1) {
-                sendMessage(sender, "messages.arguments");
+                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.arguments"));
                 return false;
             }
             int amount;
@@ -178,6 +196,17 @@ public class XPKexecutor extends JavaPlugin implements CommandExecutor {
             plugin.getConfig().set("withdraw", amount);
             plugin.saveConfig();
             sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.AQUA + " withdraw" + ChatColor.RESET + " config value set to: " + amount);
+            return true;
+        }
+        if (cmd.getName().equalsIgnoreCase("xpkcolour")) {
+            String c = args[0].toLowerCase();
+            if (!colours.containsKey(c)) {
+                sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.RESET + " You must specify a colour code like this: &6");
+                return true;
+            }
+            plugin.getConfig().set("firstline_colour", c);
+            plugin.saveConfig();
+            sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.AQUA + " firstline_colour" + ChatColor.RESET + " config value set to: " + colours.get(c));
             return true;
         }
         if (cmd.getName().equalsIgnoreCase("xpkedit")) {
