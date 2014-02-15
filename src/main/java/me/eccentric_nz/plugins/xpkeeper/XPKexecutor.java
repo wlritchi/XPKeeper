@@ -4,7 +4,11 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -12,277 +16,311 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class XPKexecutor implements CommandExecutor {
-
+public class XPKexecutor implements CommandExecutor
+{
     private final XPKeeper plugin;
     private final XPKdatabase service = XPKdatabase.getInstance();
-    public final HashMap<String, String> colours;
 
-    public XPKexecutor(XPKeeper plugin) {
+    public static final Map<String, String> permissions = Collections.unmodifiableMap(
+        new HashMap<String, String>()
+        {{
+            put("xpkreload", "xpkeeper.admin");
+            put("xpkgive", "xpkeeper.admin");
+            put("xpkset", "xpkeeper.admin");
+            put("xpkwithdraw", "xpkeeper.admin");
+            put("xpkcolour", "xpkeeper.admin");
+
+            put("xpkfist", "xpkeeper.fist");
+            put("xpklimit", "xpkeeper.limit");
+            put("xpkedit", "xpkeeper.editsign");
+
+            put("xpkpay", "xpkeeper.use");
+        }}
+    );
+
+    public static final Set<String> playerOnlyCommands = Collections.unmodifiableSet(
+        new HashSet<String>()
+        {{
+            add("xpkremove");
+            add("xpkedit");
+            add("xpkpay");
+        }}
+    );
+
+    public static final Map<String, String> boolCommands = Collections.unmodifiableMap(
+        new HashMap<String, String>()
+        {{
+            put("xpkfist", "must_use_fist");
+            put("xpklimit", "set_limits");
+        }}
+    );
+    public static final Map<String, String> uintCommands = Collections.unmodifiableMap(
+        new HashMap<String, String>()
+        {{
+            put("xpkwithdraw", "withdraw");
+        }}
+    );
+
+    public XPKexecutor(XPKeeper plugin)
+    {
         this.plugin = plugin;
-        colours = new HashMap<String, String>();
-        colours.put("&0", "Black");
-        colours.put("&1", "Dark Blue");
-        colours.put("&2", "Dark Green");
-        colours.put("&3", "Dark Aqua");
-        colours.put("&4", "Dark Red");
-        colours.put("&5", "Purple");
-        colours.put("&6", "Gold");
-        colours.put("&7", "Grey");
-        colours.put("&8", "Dark Grey");
-        colours.put("&9", "Indigo");
-        colours.put("&a", "Bright Green");
-        colours.put("&b", "Aqua");
-        colours.put("&c", "Red");
-        colours.put("&d", "Pink");
-        colours.put("&e", "Yellow");
-        colours.put("&f", "White");
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("xpkreload")) {
-            if (!sender.hasPermission("xpkeeper.admin")) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
+        try
+        {
+            String cmdName = cmd.getName().toLowerCase();
+
+            Player player = null;
+            if (sender instanceof Player)
+                player = (Player)sender;
+            else if (playerOnlyCommands.contains(cmdName))
+            {
+                sendRaw(sender, "You may not use this command at the console.");
                 return true;
             }
-            plugin.reloadConfig();
-            sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + "Config reloaded!");
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkgive")) {
-            if (!sender.hasPermission("xpkeeper.admin")) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
+
+            String requiredPerm = permissions.get(cmdName);
+            if (requiredPerm != null && !sender.hasPermission(requiredPerm))
+            {
+                sendMessage(sender, "messages.no_perms_command");
                 return true;
             }
-            if (args.length < 2) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.arguments"));
-                return false;
-            }
-            if (plugin.getServer().getPlayer(args[0]) == null) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_player"));
-                return true;
-            }
-            Player player = plugin.getServer().getPlayer(args[0]);
-            XPKCalculator xpkc = new XPKCalculator(player);
-            int i = 0;
-            try {
-                i = Integer.parseInt(args[1]);
-            } catch (NumberFormatException nfe) {
-                System.err.println("[XPKeeper] could not convert to number!");
-            }
-            xpkc.addXp(i);
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkset")) {
-            if (!sender.hasPermission("xpkeeper.admin")) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
-                return true;
-            }
-            if (args.length < 2) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.arguments"));
-                return false;
-            }
-            if (plugin.getServer().getPlayer(args[0]) == null) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_player"));
-                return true;
-            }
-            Player player = plugin.getServer().getPlayer(args[0]);
-            XPKCalculator xpkc = new XPKCalculator(player);
-            int i = 0;
-            try {
-                i = Integer.parseInt(args[1]);
-            } catch (NumberFormatException nfe) {
-                System.err.println("[XPKeeper] could not convert to number!");
-            }
-            xpkc.setXp(i);
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkremove")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                plugin.setRemoving(player.getName());
-                player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.click_sign"));
-                return true;
-            }
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkforceremove")) {
-            String player;
-            if (args.length == 1 && sender.hasPermission("xpkeeper.force")) {
-                player = args[0];
-            } else {
-                if (sender instanceof Player) {
-                    Player p = (Player) sender;
-                    player = p.getName();
-                } else {
-                    sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + "You must specify a player name when running this command from the console.");
-                    return true;
+
+            String opt = boolCommands.get(cmdName);
+            if (opt != null)
+            {
+                boolean b;
+                if (args.length > 0)
+                {
+                    String s = args[0].toLowerCase();
+                    b = s.equals("true") || s.equals("1") || s.equals("yes") || s.equals("y") || s.equals("t") || s.equals("on");
+                    if (!b && !s.equals("false") && !s.equals("0") && !s.equals("no") && !s.equals("n") && !s.equals("f") && !s.equals("off"))
+                        return false; //Show usage if it's not clearly representing a boolean true or false
                 }
-            }
-            Statement statement = null;
-            ResultSet rsget = null;
-            try {
-                Connection connection = service.getConnection();
-                statement = connection.createStatement();
-                String queryRemoveGet = "SELECT xpk_id FROM xpk WHERE player = '" + player + "'";
-                rsget = statement.executeQuery(queryRemoveGet);
-                if (rsget.isBeforeFirst()) {
-                    String queryRemovePlayer = "DELETE FROM xpk WHERE player = '" + player + "'";
-                    statement.executeUpdate(queryRemovePlayer);
-                }
-            } catch (SQLException e) {
-                System.err.println("[XPKeeper] Could not get and remove player data: " + e);
-            } finally {
-                try {
-                    if (rsget != null) {
-                        rsget.close();
-                    }
-                    if (statement != null) {
-                        statement.close();
-                    }
-                } catch (SQLException e) {
-                }
-            }
-            sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + "All database entries for " + ChatColor.RED + player + ChatColor.RESET + " were removed.");
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkfist")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                if (!player.hasPermission("xpkeeper.fist")) {
-                    player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
-                    return true;
-                }
-            }
-            boolean bool = plugin.getConfig().getBoolean("must_use_fist");
-            plugin.getConfig().set("must_use_fist", !bool);
-            plugin.saveConfig();
-            sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.AQUA + "must_use_fist" + ChatColor.RESET + " config value set to: " + !bool);
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpklimit")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                if (!player.hasPermission("xpkeeper.limit")) {
-                    player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
-                    return true;
-                }
-            }
-            boolean bool = plugin.getConfig().getBoolean("set_limits");
-            plugin.getConfig().set("set_limits", !bool);
-            plugin.saveConfig();
-            sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.AQUA + "set_limits" + ChatColor.RESET + " config value set to: " + !bool);
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkwithdraw")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                if (!player.hasPermission("xpkeeper.admin")) {
-                    player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
-                    return true;
-                }
-            }
-            if (args.length < 1) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.arguments"));
-                return false;
-            }
-            int amount;
-            try {
-                amount = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.RESET + " That is not a number!");
-                return false;
-            }
-            plugin.getConfig().set("withdraw", amount);
-            plugin.saveConfig();
-            sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.AQUA + " withdraw" + ChatColor.RESET + " config value set to: " + amount);
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkcolour")) {
-            String c = args[0].toLowerCase();
-            if (!colours.containsKey(c)) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.RESET + " You must specify a colour code like this: &6");
+                else
+                    b = plugin.getConfig().getBoolean(opt);
+                plugin.getConfig().set(opt, !b);
+                plugin.saveConfig();
+                sendRaw(sender, ChatColor.AQUA + opt + ChatColor.RESET + " config value set to: " + !b);
                 return true;
             }
-            plugin.getConfig().set("firstline_colour", c);
-            plugin.saveConfig();
-            sender.sendMessage(ChatColor.GRAY + "[XPKeeper]" + ChatColor.AQUA + " firstline_colour" + ChatColor.RESET + " config value set to: " + colours.get(c));
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkedit")) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage("Silly console, you can't change signs!");
+            opt = uintCommands.get(cmdName);
+            if (opt != null)
+            {
+                int i = Integer.parseInt(args[0]);
+                if (i < 0)
+                    throw new NumberFormatException();
+                plugin.getConfig().set(opt, i);
+                plugin.saveConfig();
+                sendRaw(sender, ChatColor.AQUA + opt + ChatColor.RESET + " config value set to: " + i);
                 return true;
             }
-            Player player = (Player) sender;
-            if (!player.hasPermission("xpkeeper.editsign")) {
-                player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
-                return true;
-            }
-            Sign sign;
-            try {
-                sign = (Sign) player.getTargetBlock(null, 10).getState();
-            } catch (NullPointerException ex) {
-                player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_sign"));
-                return true;
-            } catch (ClassCastException ex) {
-                player.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.look_sign"));
-                return true;
-            }
-            StringBuilder builder = new StringBuilder();
-            for (String a : args) {
-                builder.append(a).append(" ");
-            }
-            String newline = builder.toString();
-            // remove trailing space
-            String trimmed = newline.substring(0, newline.length() - 1);
-            sign.setLine(0, trimmed);
-            sign.update();
-            return true;
-        }
-        if (cmd.getName().equalsIgnoreCase("xpkpay")) {
-            if (!sender.hasPermission("xpkeeper.use")) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_perms_command"));
-                return true;
-            }
-            if (args.length < 2) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.arguments"));
-                return false;
-            }
-            if (plugin.getServer().getPlayer(args[0]) == null) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.no_player"));
-                return true;
-            }
-            Player giver = null;
-            if (sender instanceof Player) {
-                giver = (Player) sender;
-            }
-            if (giver == null) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + "Only players can pay other players!");
-                return true;
-            }
-            Player receiver = plugin.getServer().getPlayer(args[0]);
-            XPKCalculator xpkc_g = new XPKCalculator(giver);
-            XPKCalculator xpkc_r = new XPKCalculator(receiver);
+
             int i;
-            try {
-                i = Integer.parseInt(args[1]);
-            } catch (NumberFormatException nfe) {
-                sender.sendMessage("[XPKeeper] could not convert to number!");
-                return false;
+            switch(cmdName)
+            {
+                case "xpkreload":
+                    plugin.reloadConfig();
+                    sendRaw(sender, "Config reloaded!");
+                    return true;
+                case "xpkgive":
+                    i = Integer.parseInt(args[1]);
+                    new XPKCalculator(getPlayer(args[0])).addXp(i);
+                    sendRaw(sender, "Gave " + i + " XP to " + args[0]);
+                    return true;
+                case "xpkset":
+                    i = Integer.parseInt(args[1]);
+                    new XPKCalculator(getPlayer(args[0])).setXp(i);
+                    sendRaw(sender, "Set " + args[0] + " to " + i + " XP");
+                    return true;
+                case "xpkcolour":
+                    String s = args[0].toLowerCase();
+                    if (!colours.containsKey(s))
+                    {
+                        sendRaw(sender, "Unrecognized colour format. Recognized formats: 4 &4 dark_red darkred");
+                        return true;
+                    }
+                    i = colours.get(s);
+                    plugin.getConfig().set("firstline_colour", colourCodes.get(i));
+                    plugin.saveConfig();
+                    sendRaw(sender, ChatColor.AQUA + "firstline_colour" + ChatColor.RESET + " config value set to: " + colourNames.get(i));
+                    return true;
+                case "xpkforceremove":
+                    String playerName = null;
+                    if (player != null)
+                        playerName = player.getName();
+                    if (args.length == 1)
+                    {
+                        if (sender.hasPermission("xpkeeper.force"))
+                            playerName = args[0];
+                        else
+                        {
+                            sendMessage(sender, "messages.no_perms_command");
+                            return true;
+                        }
+                    }
+                    if (playerName == null)
+                    {
+                        sendRaw(sender, "You must specify a player name when running this command from the console.");
+                        return true;
+                    }
+                    Statement statement = null;
+                    ResultSet rsget = null;
+                    try
+                    {
+                        Connection connection = service.getConnection();
+                        statement = connection.createStatement();
+                        String queryRemoveGet = "SELECT xpk_id FROM xpk WHERE player = '" + playerName + "'";
+                        rsget = statement.executeQuery(queryRemoveGet);
+                        if (rsget.isBeforeFirst())
+                        {
+                            String queryRemovePlayer = "DELETE FROM xpk WHERE player = '" + playerName + "'";
+                            statement.executeUpdate(queryRemovePlayer);
+                        }
+                    }
+                    catch (SQLException e)
+                    {
+                        System.err.println("[XPKeeper] Could not get and remove player data: " + e);
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            if (rsget != null)
+                                rsget.close();
+                            if (statement != null)
+                                statement.close();
+                        }
+                        catch (SQLException e) { }
+                    }
+                    sendRaw(sender, "All database entries for " + ChatColor.RED + playerName + ChatColor.RESET + " were removed.");
+                    return true;
+                case "xpkremove":
+                    plugin.setRemoving(player.getName());
+                    sendRaw(player, "messages.click_sign");
+                    return true;
+                case "xpkedit":
+                    try
+                    {
+                        Sign sign = (Sign)player.getTargetBlock(null, 10).getState();
+                        StringBuilder builder = new StringBuilder(args[0]);
+                        for (i = 1; i < args.length; i++)
+                            builder.append(' ').append(args[i]);
+                        sign.setLine(0, builder.toString());
+                        sign.update();
+                    }
+                    catch (NullPointerException ex)
+                    {
+                        sendMessage(player, "messages.no_sign");
+                    }
+                    catch (ClassCastException ex)
+                    {
+                        sendMessage(player, "messages.look_sign");
+                    }
+                    return true;
+                case "xpkpay":
+                    Player receiver = getPlayer(args[0]);
+                    i = Integer.parseInt(args[1]);
+                    XPKCalculator xpkc_g = new XPKCalculator(player);
+                    XPKCalculator xpkc_r = new XPKCalculator(receiver);
+                    // check whether the giver has enough to give
+                    if (i > xpkc_g.getXp()) {
+                        sendMessage(sender, "messages.not_enough");
+                        return true;
+                    }
+                    xpkc_r.addXp(i);
+                    xpkc_g.addXp(-i);
+                    sendMessage(player, "messages.giver", args[0], i);
+                    sendMessage(receiver, "messages.reciever", player.getName(), i);
+                    return true;
             }
-            // check whether the giver has enough to give
-            int checkEnough = xpkc_g.getXp();
-            if (i > checkEnough) {
-                sender.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + plugin.getConfig().getString("messages.not_enough"));
-                return true;
-            }
-            xpkc_r.addXp(i);
-            xpkc_g.addXp(-i);
-            giver.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + String.format(plugin.getConfig().getString("messages.giver"), args[0], i));
-            receiver.sendMessage(ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET + String.format(plugin.getConfig().getString("messages.reciever"), giver.getName(), i));
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            sendMessage(sender, "messages.arguments");
+            return false;
+        }
+        catch (NumberFormatException e)
+        {
+            sendRaw(sender, "Could not convert argument to number");
+            return false;
+        }
+        catch (IllegalArgumentException e)
+        {
+            sendMessage(sender, e.getMessage());
             return true;
         }
         return false;
     }
+
+    private void sendMessage(CommandSender s, String msg, Object... args)
+    {
+        msg = plugin.getConfig().getString(msg);
+        if (args.length > 0)
+            msg = String.format(msg, args);
+        sendRaw(s, msg);
+    }
+    private void sendRaw(CommandSender s, String msg)
+    {
+        s.sendMessage(plugin.msgPrefix + msg);
+    }
+    private Player getPlayer(String s)
+    {
+        Player p = plugin.getServer().getPlayer(s);
+        if (p == null)
+            throw new IllegalArgumentException("messages.no_player");
+        return p;
+    }
+
+    public static final Map<Integer, String> colourNames = Collections.unmodifiableMap(
+        new HashMap<Integer, String>()
+        {{
+            put(0x0, "Black");
+            put(0x1, "Dark Blue");
+            put(0x2, "Dark Green");
+            put(0x3, "Dark Aqua");
+            put(0x4, "Dark Red");
+            put(0x5, "Purple");
+            put(0x6, "Gold");
+            put(0x7, "Grey");
+            put(0x8, "Dark Grey");
+            put(0x9, "Indigo");
+            put(0xa, "Bright Green");
+            put(0xb, "Aqua");
+            put(0xc, "Red");
+            put(0xd, "Pink");
+            put(0xe, "Yellow");
+            put(0xf, "White");
+        }}
+    );
+    public static final Map<Integer, String> colourCodes = Collections.unmodifiableMap(
+        new HashMap<Integer, String>()
+        {{
+            for (int i = 0; i < 16; i++)
+                put(i, "&" + Integer.toHexString(i));
+        }}
+    );
+    public static final Map<String, Integer> colours = Collections.unmodifiableMap(
+        new HashMap<String, Integer>()
+        {{
+            for (Map.Entry<Integer, String> e : colourCodes.entrySet())
+            {
+                Integer i = e.getKey();
+                String s = e.getValue();
+                put(s, i);
+                put(s.substring(1), i);
+            }
+            for (Map.Entry<Integer, String> e : colourNames.entrySet())
+            {
+                Integer i = e.getKey();
+                String s = e.getValue().toLowerCase();
+                put(s.replace(' ', '_'), i);
+                put(s.replace(" ", ""), i);
+            }
+            for (Map.Entry<String, Integer> e : entrySet())
+                System.out.println(e.getKey() + ": " + e.getValue());
+        }}
+    );
 }

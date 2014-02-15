@@ -21,6 +21,8 @@ public class XPKeeper extends JavaPlugin {
     XpkInteractionListener interactionListener;
     PluginManager pm;
 
+    public final String msgPrefix = ChatColor.GRAY + "[XPKeeper] " + ChatColor.RESET;
+
     @Override
     public void onDisable() {
         // TODO: Place any custom disable code here.
